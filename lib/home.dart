@@ -60,9 +60,7 @@ class AddNoteState extends State<AddNote> {
                         ref.set({
                           "type": type.toLowerCase(),
                           "qtd": third.text,
-                          "datetime": DateFormat('dd/MM/yyyy HH:mm')
-                              .format(DateTime.now())
-                              .toString()
+                          "datetime": DateTime.now().toString()
                         }).asStream();
                         second.clear();
                         third.clear();
@@ -87,7 +85,7 @@ class AddNoteState extends State<AddNote> {
     rng = Random();
     k = rng.nextInt(10000);
 
-    ref = fb.ref().child(widget.title.toLowerCase() + '/$k');
+    ref = fb.ref().child('${widget.title.toLowerCase()}/$k');
     todos = fb.ref().child(widget.title.toLowerCase());
 
     return Scaffold(
@@ -134,6 +132,19 @@ class AddNoteState extends State<AddNote> {
               itemBuilder: (context, snapshot, animation, index) {
                 Map<dynamic, dynamic> values =
                     snapshot.value as Map<dynamic, dynamic>;
+
+                DateTime date = DateTime.parse(values["datetime"]);
+                print(DateFormat('dd/MM/yyyy HH:mm').format(date));
+                // DateTime data = DateTime.parse(
+                //     _formatter.format(values['datetime']).toString());
+                // DateTime dataInicial = DateTime.parse(
+                //     DateTime.now().subtract(Duration(days: 1)).toString());
+                // DateTime dataFinal = DateTime.parse(DateTime.now().toString());
+
+                // print(data.toString());
+                // print(dataInicial.toString());
+                // print(dataFinal.toString());
+                // print(dataFinal.isBefore(data));
                 return SizeTransition(
                   sizeFactor: animation,
                   child: ListTile(
@@ -144,7 +155,7 @@ class AddNoteState extends State<AddNote> {
                       icon: const Icon(Icons.delete),
                     ),
                     title: Text(
-                        '${values['datetime']} - ${values['type']}: ${values['qtd']}'),
+                        '${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(values['datetime']))} - ${values['type']}: ${values['qtd']}'),
                   ),
                 );
               },

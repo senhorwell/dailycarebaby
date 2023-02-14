@@ -19,8 +19,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Daily Care Baby',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+          primarySwatch: Colors.blue, backgroundColor: Colors.black26),
       home: AddNote(title: "Noah"),
     );
   }
