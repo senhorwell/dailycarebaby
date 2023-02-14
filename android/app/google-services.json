@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "491516217530",
+    "firebase_url": "https://dailycarebaby-senhorwell-default-rtdb.firebaseio.com",
+    "project_id": "dailycarebaby-senhorwell",
+    "storage_bucket": "dailycarebaby-senhorwell.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:491516217530:android:eac4a5bb08c2eae3f65a83",
+        "android_client_info": {
+          "package_name": "com.example.dailycarebaby"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "491516217530-lv28m36bi1cfavjveq5139k40ga32epb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7ViPVgCpw_0BARIkVSvAlp8IWx3sJzd0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "491516217530-lv28m36bi1cfavjveq5139k40ga32epb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
