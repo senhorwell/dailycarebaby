@@ -18,11 +18,14 @@ class AddNoteState extends State<AddNote> {
   var rng = Random();
   var k;
   var ref;
-  var todos;
+  final fb = FirebaseDatabase.instance;
+
+  late DatabaseReference todos = fb.ref().child(widget.title.toLowerCase());
+  int totalDia = 0;
+
   TextEditingController qtdController = TextEditingController();
   TextEditingController dateController = TextEditingController();
   DateTime? pickedDate;
-  final fb = FirebaseDatabase.instance;
 
   IconData getIcon(type) {
     switch (type) {
@@ -72,6 +75,11 @@ class AddNoteState extends State<AddNote> {
                     MaterialButton(
                       color: Colors.cyan,
                       onPressed: () {
+                        print(type.toLowerCase());
+                        print(type.toLowerCase() == "leite");
+                        if(type.toLowerCase() == "leite") {
+                          sumCounter(int.parse(qtdController.text));
+                        }
                         ref.set({
                           "type": type.toLowerCase(),
                           "qtd": qtdController.text,
@@ -125,7 +133,7 @@ class AddNoteState extends State<AddNote> {
                     ),
                     Container(
                       alignment: Alignment.center,
-                      child: Text("Fitro"),
+                      child: const Text("Fitro"),
                     ),
                     Container(
                       decoration: BoxDecoration(border: Border.all()),
@@ -178,17 +186,56 @@ class AddNoteState extends State<AddNote> {
         });
   }
 
+  getCounter() async {
+    totalDia = totalDia + 1;
+    todos.once().then((snapshot){
+    Map<dynamic, dynamic> values = snapshot.snapshot.value as Map<dynamic, dynamic>;    
+    print(values);
+    values.forEach((key, value) {
+      DateTime data = DateTime.parse(value['datetime'].toString());
+      DateTime dataInicial = DateTime.parse(DateTime.now().subtract(const Duration(days: 1)).toString());
+      DateTime dataFinal = DateTime.parse(DateTime.now().toString());
+      if (dataInicial.isBefore(data) && dataFinal.isAfter(data)) {
+        if (value['type'] == "leite") {
+          setState(() {
+            totalDia += int.parse(value['qtd']);
+          });
+        }
+      }
+    });
+  });
+  }
+
+  sumCounter(int value) {
+    print(totalDia.toString() + ' + ' + value.toString());
+    setState(() {
+      totalDia += value;
+    });
+  }
+
+  String getMetric(type) {
+    if(type == 'leite') {
+      return "ml";
+    }
+    return "";
+  }
+  @override
+  void initState() {
+    getCounter();
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     rng = Random();
     k = rng.nextInt(10000);
-    int totalDia = 0;
     ref = fb.ref().child('${widget.title.toLowerCase()}/$k');
     todos = fb.ref().child(widget.title.toLowerCase());
 
     return Scaffold(
+      backgroundColor: Colors.black12,
       appBar: AppBar(
         title: Text(widget.title),
+        centerTitle: true,
         backgroundColor: Colors.cyan.shade300,
       ),
       floatingActionButton: SpeedDial(
@@ -229,6 +276,36 @@ class AddNoteState extends State<AddNote> {
       body: Column(
         children: [
           Flexible(
+            flex: 1,
+            child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Center(
+                  child: Container(
+                    height: 100,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.all(Radius.circular(150)),
+                      border: Border.all(
+                        width: 3,
+                        color: Colors.black,
+                        style: BorderStyle.solid,
+                      ),
+                    ),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 10),
+                          Text(totalDia.toString(),style: const TextStyle(fontSize: 50)),
+                          Text("Leite/24h"),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              )
+          ),
+          Flexible(
+            flex: 4,
             child: FirebaseAnimatedList(
               key: const ValueKey<bool>(false),
               query: todos,
@@ -238,25 +315,12 @@ class AddNoteState extends State<AddNote> {
                     snapshot.value as Map<dynamic, dynamic>;
 
                 DateTime data = DateTime.parse(values['datetime'].toString());
-                DateTime dataInicial = DateTime.parse(DateTime.now()
-                    .subtract(const Duration(days: 1))
-                    .toString());
-                DateTime dataFinal = DateTime.parse(DateTime.now().toString());
-
-                if (dataInicial.isBefore(data) && dataFinal.isAfter(data)) {
-                  if (values['type'] == "leite") {
-                    totalDia += int.parse(values['qtd']);
-                    print(totalDia.toString());
-                  }
-                }
 
                 if (dateController.text.length > 4) {
-                  print(pickedDate);
-                  print(data);
                   if (pickedDate!.day != data.day ||
                       pickedDate!.month != data.month ||
                       pickedDate!.year != data.year) {
-                    return SizedBox();
+                    return const SizedBox();
                   }
                 }
                 return SizeTransition(
@@ -264,6 +328,7 @@ class AddNoteState extends State<AddNote> {
                   child: ListTile(
                     trailing: IconButton(
                       onPressed: () {
+                        sumCounter(int.parse(values['qtd']) * (-1));
                         todos.child(snapshot.key!).remove();
                       },
                       icon: const Icon(Icons.delete),
@@ -274,7 +339,7 @@ class AddNoteState extends State<AddNote> {
                       size: 30,
                     ),
                     title: Text(
-                        '${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}'),
+                        '${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: TextStyle(fontSize: 20),),
                   ),
                 );
               },
