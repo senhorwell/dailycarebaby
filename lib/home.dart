@@ -22,7 +22,8 @@ class AddNoteState extends State<AddNote> {
   int totalDia = 0;
   int totalHoje = 0;
   int totalPlantao = 0;
-
+  String lastDay = "";
+  int lastDayVerifier = 0;
   TextEditingController qtdController = TextEditingController();
   TextEditingController dateController = TextEditingController();
   DateTime? pickedDate;
@@ -247,7 +248,7 @@ class AddNoteState extends State<AddNote> {
         backgroundColor: Colors.cyan.shade300,
       ),
       floatingActionButton: SpeedDial(
-          animatedIcon: AnimatedIcons.menu_arrow,
+          icon: Icons.add,
           backgroundColor: Colors.cyan.shade300,
           children: [
             SpeedDialChild(
@@ -286,7 +287,7 @@ class AddNoteState extends State<AddNote> {
           Flexible(
             flex: 2,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Padding(
                     padding: const EdgeInsets.all(10.0),
@@ -352,13 +353,18 @@ class AddNoteState extends State<AddNote> {
               child: FirebaseAnimatedList(
                 key: const ValueKey<bool>(false),
                 query: todos,
-                reverse: true,
+                reverse: false,
                 itemBuilder: (context, snapshot, animation, index) {
                   Map<dynamic, dynamic> values =
                       snapshot.value as Map<dynamic, dynamic>;
 
                   DateTime data = DateTime.parse(values['datetime'].toString());
-
+                  
+                  lastDayVerifier = 0;
+                  if ('${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}' != lastDay.toString().padLeft(2, '0') || lastDay == '') {
+                    lastDay = '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}';
+                    lastDayVerifier = 1;
+                  }
                   if (dateController.text.length > 4) {
                     if (pickedDate!.day != data.day ||
                         pickedDate!.month != data.month ||
@@ -368,21 +374,34 @@ class AddNoteState extends State<AddNote> {
                   }
                   return SizeTransition(
                     sizeFactor: animation,
-                    child: ListTile(
-                      trailing: IconButton(
-                        onPressed: () {
-                          todos.child(snapshot.key!).remove();
-                          if(values['type'] == 'leite') sumCounter(int.parse(values['qtd']) * (-1));
-                        },
-                        icon: const Icon(Icons.delete),
-                      ),
-                      leading: Icon(
-                        getIcon(values['type']),
-                        color: Colors.red,
-                        size: 30,
-                      ),
-                      title: Text(
-                          '${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: TextStyle(fontSize: 20),),
+                    child: Column(
+                      children: [
+                        lastDayVerifier == 1 ? 
+                        Column(
+                          children: [
+                            Divider(),
+                            Text(lastDay,style: TextStyle(fontSize: 25),)
+                          ]
+                        ) : const SizedBox(),
+                        
+                        
+                        ListTile(
+                          trailing: IconButton(
+                            onPressed: () {
+                              todos.child(snapshot.key!).remove();
+                              if(values['type'] == 'leite') sumCounter(int.parse(values['qtd']) * (-1));
+                            },
+                            icon: const Icon(Icons.delete),
+                          ),
+                          leading: Icon(
+                            getIcon(values['type']),
+                            color: Colors.red,
+                            size: 30,
+                          ),
+                          title: Text(
+                              '${DateFormat('HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: TextStyle(fontSize: 20),),
+                        ),
+                      ],
                     ),
                   );
                 },
