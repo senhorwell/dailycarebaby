@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 // ignore: must_be_immutable
 class AddNote extends StatefulWidget {
@@ -21,6 +22,8 @@ class AddNoteState extends State<AddNote> {
   late DatabaseReference todos = fb.ref().child(widget.title.toLowerCase());
   int totalDia = 0;
   int totalHoje = 0;
+  double totalDiaPercent = 1.0;
+  double totalHojePercent = 1.0;
   int totalPlantao = 0;
   String lastDay = "";
   int lastDayVerifier = 0;
@@ -82,7 +85,8 @@ class AddNoteState extends State<AddNote> {
                         ref.set({
                           "type": type.toLowerCase(),
                           "qtd": qtdController.text,
-                          "datetime": DateTime.now().toString()
+                          "datetime": DateTime.now().toString(),
+                          "ativo": "1"
                         }).asStream();
                         qtdController.clear();
                         Navigator.of(context).pop();
@@ -203,11 +207,16 @@ class AddNoteState extends State<AddNote> {
           setState(() {
             totalDia += int.parse(value['qtd']);
           });
+
+          totalDiaPercent = double.parse(totalDia.toString()) * 100.0;
+          totalDiaPercent = totalDiaPercent / 96000.0;
         }
         if (data.day == dataFinal.day && dataFinal.month == data.month) {
           setState(() {
             totalHoje += int.parse(value["qtd"]);
           });
+          totalHojePercent = double.parse(totalHoje.toString()) * 100.0;
+          totalHojePercent = totalHojePercent / 96000.0;
         }
       }
     });
@@ -290,64 +299,64 @@ class AddNoteState extends State<AddNote> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Center(
-                      child: Container(
-                        height: 150,
-                        width: 150,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(Radius.circular(150)),
-                          border: Border.all(
-                            width: 3,
-                            color: Colors.black,
-                            style: BorderStyle.solid,
+                  padding: const EdgeInsets.all(8.0),
+                  child: Center(
+                    child: Container(
+                      height: 200,
+                      width: 200,
+                      child: Center(
+                        child: CircularPercentIndicator(
+                          radius: 80.0,
+                          lineWidth: 13.0,
+                          animation: true,
+                          percent: totalDiaPercent,
+                          center: Text(
+                            "${totalDia.toString()}ml/960ml",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
                           ),
-                        ),
-                        child: Center(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(totalDia.toString(),style: const TextStyle(fontSize: 50)),
-                              const Text("Leite/24h"),
-                            ],
+                          footer: const Text(
+                            "Leite/24h",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0),
                           ),
-                        ),
-                      ),
-                    )
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Center(
-                      child: Container(
-                        height: 150,
-                        width: 150,
-                        decoration: BoxDecoration(
-                          borderRadius: const BorderRadius.all(Radius.circular(150)),
-                          border: Border.all(
-                            width: 3,
-                            color: Colors.black,
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(totalHoje.toString(),style: const TextStyle(fontSize: 50)),
-                              const Text("Leite hoje"),
-                            ],
-                          ),
+                          circularStrokeCap: CircularStrokeCap.round,
+                          progressColor: Colors.blue,
                         ),
                       ),
-                    )
+                    ),
                   )
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Center(
+                    child: Container(
+                      height: 200,
+                      width: 200,
+                      child: Center(
+                        child: CircularPercentIndicator(
+                          radius: 80.0,
+                          lineWidth: 13.0,
+                          animation: true,
+                          percent: totalHojePercent,
+                          center: Text(
+                            "${totalHoje.toString()}ml/960ml",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20.0),
+                          ),
+                          footer: const Text(
+                            "Leite hoje",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.0),
+                          ),
+                          circularStrokeCap: CircularStrokeCap.round,
+                          progressColor: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  )
+                ),
               ],
             )
           ),
           Flexible(
-            flex: 4,
+            flex: 3,
             child: Padding(
               padding: const EdgeInsets.only(bottom:50.0),
               child: FirebaseAnimatedList(
@@ -372,6 +381,17 @@ class AddNoteState extends State<AddNote> {
                       return const SizedBox();
                     }
                   }
+
+
+                  DateTime dataInicial = DateTime.parse(DateTime.now().subtract(const Duration(hours: 30)).toString());
+                  if (dataInicial.isAfter(data)) {
+                    return SizedBox();
+                  }
+
+                  if (values['ativo'] == "0") {
+                    return const SizedBox();
+                  }
+                  
                   return SizeTransition(
                     sizeFactor: animation,
                     child: Column(
@@ -388,7 +408,13 @@ class AddNoteState extends State<AddNote> {
                         ListTile(
                           trailing: IconButton(
                             onPressed: () {
-                              todos.child(snapshot.key!).remove();
+                              //todos.child(snapshot.key!).remove();
+                              todos.child(snapshot.key!).set({
+                                "type": values['type'],
+                                "qtd": values['qtd'],
+                                "datetime": values['datetime'],
+                                "ativo": "0"
+                              }).asStream();
                               if(values['type'] == 'leite') sumCounter(int.parse(values['qtd']) * (-1));
                             },
                             icon: const Icon(Icons.delete),
