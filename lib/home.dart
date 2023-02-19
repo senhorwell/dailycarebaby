@@ -17,6 +17,7 @@ class AddNote extends StatefulWidget {
 class AddNoteState extends State<AddNote> {
   var k;
   var ref;
+  late List valuesList;
   final fb = FirebaseDatabase.instance;
 
   late DatabaseReference todos = fb.ref().child(widget.title.toLowerCase());
@@ -220,12 +221,13 @@ class AddNoteState extends State<AddNote> {
         }
       }
     });
-  });
+    });
   }
 
   sumCounter(int value) {
     setState(() {
       totalDia += value;
+      totalHoje += value;
     });
   }
 
@@ -301,7 +303,7 @@ class AddNoteState extends State<AddNote> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                       height: 200,
                       width: 200,
                       child: Center(
@@ -328,7 +330,7 @@ class AddNoteState extends State<AddNote> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
-                    child: Container(
+                    child: SizedBox(
                       height: 200,
                       width: 200,
                       child: Center(
@@ -385,7 +387,7 @@ class AddNoteState extends State<AddNote> {
 
                   DateTime dataInicial = DateTime.parse(DateTime.now().subtract(const Duration(hours: 30)).toString());
                   if (dataInicial.isAfter(data)) {
-                    return SizedBox();
+                    return const SizedBox();
                   }
 
                   if (values['ativo'] == "0") {
@@ -399,8 +401,8 @@ class AddNoteState extends State<AddNote> {
                         lastDayVerifier == 1 ? 
                         Column(
                           children: [
-                            Divider(),
-                            Text(lastDay,style: TextStyle(fontSize: 25),)
+                            const Divider(),
+                            Text(lastDay,style: const TextStyle(fontSize: 25),)
                           ]
                         ) : const SizedBox(),
                         
@@ -425,7 +427,7 @@ class AddNoteState extends State<AddNote> {
                             size: 30,
                           ),
                           title: Text(
-                              '${DateFormat('HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: TextStyle(fontSize: 20),),
+                              '${DateFormat('HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: const TextStyle(fontSize: 20),),
                         ),
                       ],
                     ),
