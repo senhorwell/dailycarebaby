@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 
@@ -17,7 +19,8 @@ class AddNote extends StatefulWidget {
 class AddNoteState extends State<AddNote> {
   var k;
   var ref;
-  late List valuesList;
+  List<dynamic> listValue = [];
+  List<List<dynamic>> listList = [];
   final fb = FirebaseDatabase.instance;
 
   late DatabaseReference todos = fb.ref().child(widget.title.toLowerCase());
@@ -91,6 +94,7 @@ class AddNoteState extends State<AddNote> {
                         }).asStream();
                         qtdController.clear();
                         Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => AddNote(title: widget.title)));
                       },
                       child: const Text(
                         "Salvar",
@@ -196,7 +200,9 @@ class AddNoteState extends State<AddNote> {
     
     return 2;
   }
-  getCounter() async {
+  getCounter() {
+    DateTime? dataTest;
+    int id = 0;
     todos.once().then((snapshot){
     Map<dynamic, dynamic> values = snapshot.snapshot.value as Map<dynamic, dynamic>;    
     values.forEach((key, value) {
@@ -211,6 +217,7 @@ class AddNoteState extends State<AddNote> {
 
           totalDiaPercent = double.parse(totalDia.toString()) * 100.0;
           totalDiaPercent = totalDiaPercent / 96000.0;
+          totalDiaPercent > 1 ? totalDiaPercent = 1 : totalDiaPercent;
         }
         if (data.day == dataFinal.day && dataFinal.month == data.month) {
           setState(() {
@@ -218,7 +225,22 @@ class AddNoteState extends State<AddNote> {
           });
           totalHojePercent = double.parse(totalHoje.toString()) * 100.0;
           totalHojePercent = totalHojePercent / 96000.0;
+          totalHojePercent > 1 ? totalHojePercent = 1 : totalHojePercent;
         }
+      }
+
+      dataTest ??= data;
+
+      if (dataTest!.day != data.day) {
+        listList.insert(id, listValue);
+        print(listValue);
+        id++;
+        listValue.clear();
+        dataTest = data;
+      }
+      
+      if (dataTest!.day == data.day) {
+        listValue.add(value);
       }
     });
     });
@@ -264,39 +286,38 @@ class AddNoteState extends State<AddNote> {
           children: [
             SpeedDialChild(
               backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.medication_liquid),
+              child: const Icon(Icons.medication_liquid,color: Colors.white),
               label: 'Leite',
               onTap: () => openModal("Leite"),
             ),
             SpeedDialChild(
               backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.baby_changing_station),
+              child: const Icon(Icons.baby_changing_station,color: Colors.white),
               label: 'Fralda',
               onTap: () => openModal("Fralda"),
             ),
             SpeedDialChild(
               backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.sick),
+              child: const Icon(Icons.sick,color: Colors.white),
               label: 'Vômito',
               onTap: () => openModal("Vomito"),
             ),
             SpeedDialChild(
               backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.thermostat),
+              child: const Icon(Icons.thermostat,color: Colors.white),
               label: 'Febre',
               onTap: () => openModal("Febre"),
             ),
             SpeedDialChild(
               backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.filter_alt),
+              child: const Icon(Icons.filter_alt,color: Colors.white),
               label: 'Filtro',
               onTap: () => openFilterModal(),
             )
           ]),
-      body: Column(
+      body:  Column(
         children: [
-          Flexible(
-            flex: 2,
+          Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -357,87 +378,36 @@ class AddNoteState extends State<AddNote> {
               ],
             )
           ),
-          Flexible(
-            flex: 3,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom:50.0),
-              child: FirebaseAnimatedList(
-                key: const ValueKey<bool>(false),
-                query: todos,
-                reverse: false,
-                itemBuilder: (context, snapshot, animation, index) {
-                  Map<dynamic, dynamic> values =
-                      snapshot.value as Map<dynamic, dynamic>;
-
-                  DateTime data = DateTime.parse(values['datetime'].toString());
-                  
-                  lastDayVerifier = 0;
-                  if ('${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}' != lastDay.toString().padLeft(2, '0') || lastDay == '') {
-                    lastDay = '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}';
-                    lastDayVerifier = 1;
-                  }
-                  if (dateController.text.length > 4) {
-                    if (pickedDate!.day != data.day ||
-                        pickedDate!.month != data.month ||
-                        pickedDate!.year != data.year) {
-                      return const SizedBox();
-                    }
-                  }
-
-
-                  DateTime dataInicial = DateTime.parse(DateTime.now().subtract(const Duration(hours: 30)).toString());
-                  if (dataInicial.isAfter(data)) {
-                    return const SizedBox();
-                  }
-
-                  if (values['ativo'] == "0") {
-                    return const SizedBox();
-                  }
-                  
-                  return SizeTransition(
-                    sizeFactor: animation,
-                    child: Column(
-                      children: [
-                        lastDayVerifier == 1 ? 
+          Expanded(
+            child: ListView.builder(
+                shrinkWrap: true,
+                  itemCount: 1,
+                  itemBuilder: (BuildContext context, int index) {
+                  return Card(
+                    child: ExpansionTile(
+                      title: Text(DateFormat('dd MMMM', 'pt_Br').format(DateTime.parse(listList[0][index]["datetime"]))),
+                      children: <Widget>[
                         Column(
                           children: [
-                            const Divider(),
-                            Text(lastDay,style: const TextStyle(fontSize: 25),)
-                          ]
-                        ) : const SizedBox(),
-                        
-                        
-                        ListTile(
-                          trailing: IconButton(
-                            onPressed: () {
-                              //todos.child(snapshot.key!).remove();
-                              todos.child(snapshot.key!).set({
-                                "type": values['type'],
-                                "qtd": values['qtd'],
-                                "datetime": values['datetime'],
-                                "ativo": "0"
-                              }).asStream();
-                              if(values['type'] == 'leite') sumCounter(int.parse(values['qtd']) * (-1));
-                            },
-                            icon: const Icon(Icons.delete),
-                          ),
-                          leading: Icon(
-                            getIcon(values['type']),
-                            color: Colors.red,
-                            size: 30,
-                          ),
-                          title: Text(
-                              '${DateFormat('HH:mm').format(DateTime.parse(values['datetime']))}: ${values['qtd']}${getMetric(values['type'])}',style: const TextStyle(fontSize: 20),),
+                            ListView.builder(
+                                shrinkWrap: true,
+                              itemCount: listList[index].length,
+                                itemBuilder: (context, i){
+                                  return ListTile(
+                                    title: Text(DateFormat('hh:mm', 'pt_Br').format(DateTime.parse(listList[index][i]["datetime"])) + ": " + listList[index][i]["type"] + " " + listList[index][i]["qtd"] ),
+                                  );
+                                },
+                            ),
+                          ],
                         ),
-                      ],
+                      ]
                     ),
                   );
-                },
+                }
               ),
-            ),
           ),
         ],
-      ),
+      )
     );
   }
 }
