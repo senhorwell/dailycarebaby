@@ -1,14 +1,12 @@
-import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
-import 'package:numberpicker/numberpicker.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import '../themes/app_images.dart';
 
 // ignore: must_be_immutable
 class AddNote extends StatefulWidget {
@@ -36,7 +34,7 @@ class AddNoteState extends State<AddNote> {
   TextEditingController qtdController = TextEditingController();
   TextEditingController dateController = TextEditingController();
   DateTime? pickedDate;
-
+  String shitCounter = "";
   IconData getIcon(type) {
     switch (type) {
       case 'leite':
@@ -55,7 +53,7 @@ class AddNoteState extends State<AddNote> {
     k = getDateTimeId();
     ref = fb.ref().child('${widget.title.toLowerCase()}/$k');
     int _currentValue = 0;
-    qtdController.text = "Apenas xixi";
+    qtdController.text = type.toLowerCase() == "fralda" ? "Apenas xixi" : "";
     List<DropdownMenuItem<String>> cnhCategories = const [
       DropdownMenuItem(value: "Apenas xixi", child: Center(child: Text("Apenas xixi"))),
       DropdownMenuItem(value: "Pouco cocô", child: Center(child: Text("Pouco cocô"))),
@@ -257,6 +255,9 @@ class AddNoteState extends State<AddNote> {
         }
       }
 
+      if(value["qtd"].toString().contains("coco") || value["qtd"].toString().contains("cocô")) {
+        shitCounter = DateFormat('dd/MM HH:mm', 'pt_Br').format(DateTime.parse(value["datetime"]));
+      }
       dataTest ??= data;
 
       if (dataTest!.day != data.day) {
@@ -358,6 +359,11 @@ class AddNoteState extends State<AddNote> {
                     ),
                   )
                 ),
+                shitCounter != "" ? 
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(shitCounter + "ultimo cocô"),
+                  ) : const SizedBox(),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
@@ -399,13 +405,14 @@ class AddNoteState extends State<AddNote> {
                         Column(
                           children: [
                             ListView.builder(
-                                shrinkWrap: true,
+                              shrinkWrap: true,
+                              reverse: true,
                               itemCount: listList[index].length,
                                 itemBuilder: (context, i){
                                   return Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: ListTile(
-                                      leading: listList[index][i]["type"] == "fralda" ? Image.asset('../assets/fralda.png',width: 40,height: 40,) : Image.asset('../assets/leite.png',width: 40,height: 40,),
+                                      leading: listList[index][i]["type"] == "fralda" ? AssetImage(AppImages.fralda,width: 40,height: 40,) : Image.asset('../assets/leite.png',width: 40,height: 40,),
                                       title: Text(DateFormat('HH:mm', 'pt_Br').format(DateTime.parse(listList[index][i]["datetime"])),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 30),),
                                       subtitle: Row(children: [
                                         Text(listList[index][i]["type"] == "leite" ? listList[index][i]["qtd"] + "ml" : listList[index][i]["qtd"],style: TextStyle(fontSize: 20),)
