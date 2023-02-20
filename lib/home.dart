@@ -1,11 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_database/ui/firebase_animated_list.dart';
 import 'package:flutter/material.dart';
+import 'package:numberpicker/numberpicker.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 // ignore: must_be_immutable
@@ -52,6 +54,16 @@ class AddNoteState extends State<AddNote> {
   openModal(type) {
     k = getDateTimeId();
     ref = fb.ref().child('${widget.title.toLowerCase()}/$k');
+    int _currentValue = 0;
+    qtdController.text = "Apenas xixi";
+    List<DropdownMenuItem<String>> cnhCategories = const [
+      DropdownMenuItem(value: "Apenas xixi", child: Center(child: Text("Apenas xixi"))),
+      DropdownMenuItem(value: "Pouco cocô", child: Center(child: Text("Pouco cocô"))),
+      DropdownMenuItem(value: "Médio cocô", child: Center(child: Text("Médio cocô"))),
+      DropdownMenuItem(value: "Muito cocô", child: Center(child: Text("Muito cocô"))),
+      DropdownMenuItem(value: "Diarréia", child: Center(child: Text("Diarréia")))
+    ];
+
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -64,23 +76,36 @@ class AddNoteState extends State<AddNote> {
                   children: [
                     Container(
                       alignment: Alignment.center,
-                      child: Text(type),
+                      child: Text(type,style: TextStyle(fontWeight: FontWeight.bold,fontSize: 40),),
                     ),
                     Container(
                       decoration: BoxDecoration(border: Border.all()),
-                      child: TextField(
+                      child: type.toLowerCase() == "leite" ? TextField(
                         controller: qtdController,
                         textAlign: TextAlign.center,
-                        keyboardType: type.toLowerCase() == "leite" || type.toLowerCase() == "febre" ? TextInputType.number : TextInputType.text,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: const InputDecoration(
                           hintText: 'Quantidade',
                         ),
-                      ),
+                      ) : DropdownButtonFormField(
+                        icon: Icon(Icons.expand_more_rounded, color: Theme.of(context).primaryColor),
+                        value: qtdController.text,
+                        isExpanded: true,
+                        alignment: Alignment.center,
+                        onChanged: (String? value) async {
+                          qtdController.text = value!;
+                        },
+                        items: cnhCategories
+                      )
                     ),
                     const SizedBox(
                       height: 10,
                     ),
                     MaterialButton(
+                      minWidth: MediaQuery.of(context).size.width,
                       color: Colors.cyan,
                       onPressed: () {
                         if(type.toLowerCase() == "leite") {
@@ -88,7 +113,7 @@ class AddNoteState extends State<AddNote> {
                         }
                         ref.set({
                           "type": type.toLowerCase(),
-                          "qtd": qtdController.text,
+                          "qtd": type.toLowerCase() == "fralda" ? qtdController.text : _currentValue.toString(),
                           "datetime": DateTime.now().toString(),
                           "ativo": "1"
                         }).asStream();
@@ -96,11 +121,14 @@ class AddNoteState extends State<AddNote> {
                         Navigator.of(context).pop();
                         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => AddNote(title: widget.title)));
                       },
-                      child: const Text(
-                        "Salvar",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: const Text(
+                          "Salvar",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -295,24 +323,6 @@ class AddNoteState extends State<AddNote> {
               child: const Icon(Icons.baby_changing_station,color: Colors.white),
               label: 'Fralda',
               onTap: () => openModal("Fralda"),
-            ),
-            SpeedDialChild(
-              backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.sick,color: Colors.white),
-              label: 'Vômito',
-              onTap: () => openModal("Vomito"),
-            ),
-            SpeedDialChild(
-              backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.thermostat,color: Colors.white),
-              label: 'Febre',
-              onTap: () => openModal("Febre"),
-            ),
-            SpeedDialChild(
-              backgroundColor: Colors.cyan.shade300,
-              child: const Icon(Icons.filter_alt,color: Colors.white),
-              label: 'Filtro',
-              onTap: () => openFilterModal(),
             )
           ]),
       body:  Column(
@@ -380,7 +390,6 @@ class AddNoteState extends State<AddNote> {
           ),
           Expanded(
             child: ListView.builder(
-                shrinkWrap: true,
                   itemCount: 1,
                   itemBuilder: (BuildContext context, int index) {
                   return Card(
@@ -393,8 +402,15 @@ class AddNoteState extends State<AddNote> {
                                 shrinkWrap: true,
                               itemCount: listList[index].length,
                                 itemBuilder: (context, i){
-                                  return ListTile(
-                                    title: Text(DateFormat('hh:mm', 'pt_Br').format(DateTime.parse(listList[index][i]["datetime"])) + ": " + listList[index][i]["type"] + " " + listList[index][i]["qtd"] ),
+                                  return Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ListTile(
+                                      leading: listList[index][i]["type"] == "fralda" ? Image.asset('../assets/fralda.png',width: 40,height: 40,) : Image.asset('../assets/leite.png',width: 40,height: 40,),
+                                      title: Text(DateFormat('HH:mm', 'pt_Br').format(DateTime.parse(listList[index][i]["datetime"])),style: TextStyle(fontWeight: FontWeight.bold,fontSize: 30),),
+                                      subtitle: Row(children: [
+                                        Text(listList[index][i]["type"] == "leite" ? listList[index][i]["qtd"] + "ml" : listList[index][i]["qtd"],style: TextStyle(fontSize: 20),)
+                                      ]),
+                                    ),
                                   );
                                 },
                             ),
